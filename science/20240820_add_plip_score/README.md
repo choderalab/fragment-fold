@@ -1,0 +1,1 @@
+The goal is to take the work Siyang did + the ongoing work Maria has been doing in generating prepped, predicted protein-ligand complexes based off of an original structure using AlphaFold + docking and using PLIP to generate a score that estimates how much of the original binding site has been preserved.
