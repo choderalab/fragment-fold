@@ -178,6 +178,131 @@ def collect_duplicates(plints: list[ProteinLigandInteraction]):
     return list(obj_dict.values())
 
 
+def visualize_in_pymol(pdb_file: str | Path, mol: PDBComplex, binding_site: str, outpath: str | Path):
+    """
+    Copied from plip.visualization.visualize.visualize_in_pymol
+    :param mol:
+    :param binding_site:
+    :return:
+    """
+    from plip.basic.remote import VisualizerData
+    from plip.visualization.pymol import PyMOLVisualizer
+    from plip.basic.supplemental import start_pymol
+    from pymol import cmd
+    viz_data = VisualizerData(mol, binding_site)
+    viz = PyMOLVisualizer(viz_data)
+
+    pdbid = viz_data.pdbid
+    lig_members = viz_data.lig_members
+    chain = viz_data.chain
+
+    ligname = viz.ligname
+    hetid = viz_data.hetid
+
+    metal_ids = viz_data.metal_ids
+    metal_ids_str = '+'.join([str(i) for i in metal_ids])
+
+    ########################
+    # Basic visualizations #
+    ########################
+
+    start_pymol(run=True, options='-pcq')
+    viz.set_initial_representations()
+
+    cmd.load(pdb_file)
+    # cmd.frame(config.MODEL)
+    current_name = cmd.get_object_list(selection='(all)')[0]
+
+    # logger.debug(f'setting current_name to {current_name} and PDB-ID to {pdbid}')
+    cmd.set_name(current_name, pdbid)
+    cmd.hide('everything', 'all')
+    # if config.PEPTIDES:
+    #     cmd.select(ligname, 'chain %s and not resn HOH' % plcomplex.chain)
+    # else:
+    cmd.select(ligname, 'resn %s and chain %s and resi %s*' % (hetid, chain, viz_data.position))
+    # logger.debug(f'selecting ligand for PDBID {pdbid} and ligand name {ligname}')
+    # logger.debug(f'resn {hetid} and chain {chain} and resi {viz_data.position}')
+
+    # Visualize and color metal ions if there are any
+    if not len(metal_ids) == 0:
+        viz.select_by_ids(ligname, metal_ids, selection_exists=True)
+        cmd.show('spheres', 'id %s and %s' % (metal_ids_str, pdbid))
+
+    # Additionally, select all members of composite ligands
+    if len(lig_members) > 1:
+        for member in lig_members:
+            resid, chain, resnr = member[0], member[1], str(member[2])
+            cmd.select(ligname, '%s or (resn %s and chain %s and resi %s)' % (ligname, resid, chain, resnr))
+
+    cmd.show('sticks', ligname)
+    cmd.color('myblue')
+    cmd.color('myorange', ligname)
+    cmd.util.cnc('all')
+    if not len(metal_ids) == 0:
+        cmd.color('hotpink', 'id %s' % metal_ids_str)
+        cmd.hide('sticks', 'id %s' % metal_ids_str)
+        cmd.set('sphere_scale', 0.3, ligname)
+    cmd.deselect()
+
+    viz.make_initial_selections()
+
+    viz.show_hydrophobic()  # Hydrophobic Contacts
+    viz.show_hbonds()  # Hydrogen Bonds
+    viz.show_halogen()  # Halogen Bonds
+    viz.show_stacking()  # pi-Stacking Interactions
+    viz.show_cationpi()  # pi-Cation Interactions
+    viz.show_sbridges()  # Salt Bridges
+    viz.show_wbridges()  # Water Bridges
+    viz.show_metal()  # Metal Coordination
+
+    viz.refinements()
+
+    viz.zoom_to_ligand()
+
+    viz.selections_cleanup()
+
+    viz.selections_group()
+    viz.additional_cleanup()
+
+    cmd.set_view("0.790048063, 0.453209877, -0.412817836, \
+        0.451398253, -0.885698199, -0.108479470, \
+        -0.414800942, -0.100639485, -0.904327989, \
+        -0.000238426, 0.001031738, -48.357181549, \
+        -0.659594536, 96.026756287, 16.970699310, \
+        25.949367523, 70.827865601, -20.000000000")
+    viz.save_picture(outpath.parent, outpath.stem)
+
+
+
+    # filename = '%s_%s' % (pdbid.upper(), "_".join([hetid, viz_data.chain, viz_data.position]))
+    print(f"Saving session to {outpath}")
+    cmd.save(outpath)
+
+    print("Deleting Session")
+    cmd.delete('all')
+
+    # if config.DNARECEPTOR:
+    #     # Rename Cartoon selection to Line selection and change repr.
+    #     cmd.set_name('%sCartoon' % plcomplex.pdbid, '%sLines' % plcomplex.pdbid)
+    #     cmd.hide('cartoon', '%sLines' % plcomplex.pdbid)
+    #     cmd.show('lines', '%sLines' % plcomplex.pdbid)
+    #
+    # if config.PEPTIDES:
+    #     filename = "%s_PeptideChain%s" % (pdbid.upper(), plcomplex.chain)
+    #     if config.PYMOL:
+    #         vis.save_session(config.OUTPATH, override=filename)
+    # elif config.INTRA is not None:
+    #     filename = "%s_IntraChain%s" % (pdbid.upper(), plcomplex.chain)
+    #     if config.PYMOL:
+    #         vis.save_session(config.OUTPATH, override=filename)
+    # else:
+    #     filename = '%s_%s' % (pdbid.upper(), "_".join([hetid, plcomplex.chain, plcomplex.position]))
+    #     if config.PYMOL:
+    #         vis.save_session(config.OUTPATH)
+    # if config.PICS:
+    #     vis.save_picture(config.OUTPATH, filename)
+
+
 class PLIntReport(BaseModel):
     """
     Class to store a report of PLIP interactions
@@ -186,7 +311,7 @@ class PLIntReport(BaseModel):
     interactions: list[ProteinLigandInteraction]
 
     @classmethod
-    def from_complex_path(cls, complex_path: str | Path, ligand_id="UNK") -> "PLIntReport":
+    def from_complex_path(cls, complex_path: str | Path, ligand_id="UNK", create_pymol_session=False, pymol_session_path: str | Path = None, ) -> "PLIntReport":
         my_mol = PDBComplex()
         my_mol.load_pdb(str(complex_path))
         my_mol.analyze()
@@ -200,7 +325,18 @@ class PLIntReport(BaseModel):
 
         # Convert the PLIP interaction analysis of the binding site to a list of ProteinLigandInteractions and then
         # Collect any duplicate interactions
-        interactions = collect_duplicates(plip_constructor(my_mol.interaction_sets[binding_site]))
+        if binding_site:
+            raw_plip_report = my_mol.interaction_sets[binding_site]
+            interactions = collect_duplicates(plip_constructor(raw_plip_report))
+
+        else:
+            interactions = []
+
+        if create_pymol_session:
+            if not pymol_session_path:
+                raise ValueError("Output directory must be specified to create a pymol session")
+            visualize_in_pymol(complex_path, my_mol, binding_site, pymol_session_path)
+
         return cls(structure=str(complex_path), interactions=interactions)
 
     def to_csv(self, path: str | Path):
@@ -218,6 +354,7 @@ class FingerprintLevel(Enum):
     """
     Enum to specify the level of detail for the fingerprint
     """
+    ByTotalInteractions = 'ByTotalInteractions'
     ByInteractionType = 'ByInteractionType'
     ByInteractionTypeAndResidueType = 'ByInteractionTypeAndResidueType'
     ByInteractionTypeAndAtomTypes = 'ByInteractionTypeAndAtomTypes'
@@ -237,23 +374,26 @@ def calculate_fingerprint(plint_report: PLIntReport, level: FingerprintLevel) ->
     :return: dict
     """
     fingerprint_dict = {}
-    for interaction in plint_report.interactions:
-        if level == FingerprintLevel.ByInteractionType:
-            key = interaction.interaction_type.value
-        elif level == FingerprintLevel.ByInteractionTypeAndResidueType:
-            key = f"{interaction.interaction_type.value}_{interaction.protein_residue_type}"
-        elif level == FingerprintLevel.ByInteractionTypeAndAtomTypes:
-            key = f"{interaction.interaction_type.value}_Protein_{interaction.protein_atom_type}_Ligand_{interaction.ligand_atom_type}"
-        elif level == FingerprintLevel.ByInteractionTypeAndResidueTypeAndBBorSC:
-            key = f"{interaction.interaction_type.value}_{interaction.protein_residue_type}_{'SC' if interaction.to_sidechain else 'BB'}"
-        elif level == FingerprintLevel.ByInteractionTypeAndResidueTypeAndNumber:
-            key = f"{interaction.interaction_type.value}_{interaction.protein_residue_type}{interaction.protein_residue_number}"
-        elif level == FingerprintLevel.ByEverything:
-            key = "_".join([f"{k}_{str(v)}" for k, v in interaction.dict().items()])
-        else:
-            raise ValueError("Invalid Fingerprint Level")
-        original_count = fingerprint_dict.get(key, 0)
-        fingerprint_dict[key] = original_count + interaction.count
+    if level == FingerprintLevel.ByTotalInteractions:
+        fingerprint_dict['TotalInteractions'] = len(plint_report.interactions)
+    else:
+        for interaction in plint_report.interactions:
+            if level == FingerprintLevel.ByInteractionType:
+                key = interaction.interaction_type.value
+            elif level == FingerprintLevel.ByInteractionTypeAndResidueType:
+                key = f"{interaction.interaction_type.value}_{interaction.protein_residue_type}"
+            elif level == FingerprintLevel.ByInteractionTypeAndAtomTypes:
+                key = f"{interaction.interaction_type.value}_Protein_{interaction.protein_atom_type}_Ligand_{interaction.ligand_atom_type}"
+            elif level == FingerprintLevel.ByInteractionTypeAndResidueTypeAndBBorSC:
+                key = f"{interaction.interaction_type.value}_{interaction.protein_residue_type}_{'SC' if interaction.to_sidechain else 'BB'}"
+            elif level == FingerprintLevel.ByInteractionTypeAndResidueTypeAndNumber:
+                key = f"{interaction.interaction_type.value}_{interaction.protein_residue_type}{interaction.protein_residue_number}"
+            elif level == FingerprintLevel.ByEverything:
+                key = "_".join([f"{k}_{str(v)}" for k, v in interaction.dict().items()])
+            else:
+                raise ValueError("Invalid Fingerprint Level")
+            original_count = fingerprint_dict.get(key, 0)
+            fingerprint_dict[key] = original_count + interaction.count
     return fingerprint_dict
 
 
