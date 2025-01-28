@@ -1,4 +1,9 @@
-SARS_crystal: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/sars_matching_mers
-MERS_crytal: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/mers_matching_sars
-SARS_docked: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/minimized_sars_mcrystal
-MERS_docked: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/minimized_mers_mcrystal
+#SARS_crystal: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/sars_matching_mers
+#MERS_crytal: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/mers_matching_sars
+#SARS_docked: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/minimized_sars_mcrystal
+#MERS_docked: /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/minimized_mers_mcrystal
+
+SARS_crystal: /Users/alexpayne/Scientific_Projects/mers-drug-discovery/sars2-retrospective-analysis/broad-spectrum-validation_maria/sars_matching_mers/minimized_crystal_sars
+MERS_crystal: /Users/alexpayne/Scientific_Projects/mers-drug-discovery/sars2-retrospective-analysis/broad-spectrum-validation_maria/mers_matching_sars/minimized_crystal_mers
+SARS_docked: /Users/alexpayne/Scientific_Projects/mers-drug-discovery/sars2-retrospective-analysis/broad-spectrum-validation_maria/minimized_sars_mcrystal
+MERS_docked: /Users/alexpayne/Scientific_Projects/mers-drug-discovery/sars2-retrospective-analysis/broad-spectrum-validation_maria/minimized_mers_mcrystal
