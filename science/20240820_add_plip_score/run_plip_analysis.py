@@ -17,6 +17,7 @@ def analyze_structure(structure: Path, name: str, output_dir: Path):
     outpath = output_dir / f"{name}_{structure.stem}_interactions.csv"
     interactions = PLIntReport.from_complex_path(complex_path=structure, create_pymol_session=True, pymol_session_path=outpath.with_suffix(".pse"))
     interactions.to_csv(outpath)
+    print(f"Saved interactions to {outpath}")
     return outpath
 
 def main():

@@ -9,3 +9,4 @@ Structures downloaded from:
 | MERS crystal structures | /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/mers_matching_sars      |
 | SARS docked             | /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/minimized_sars_mcrystal |
 | MERS docked             | /lila/data/chodera/asap-restricted/broad-spectrum-validation_maria/sars_mers_gen_validation/minimized_mers_mcrystal |
+| SARS ensitelvir   | /data1/choderaj/asap-restricted/broad-spectrum-validation_maria/SARS_genetics/minimized_ensitrelvir_final/aligned |
