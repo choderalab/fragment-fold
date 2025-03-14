@@ -412,6 +412,8 @@ class SimilarityScore(BaseModel):
 def calculate_tversky(fingerprint1: dict, fingerprint2: dict, alpha: float = 1, beta: float = 0) -> SimilarityScore:
     """
     Calculate the Tversky Index between two fingerprints.
+    Tversky Index = |A ∩ B| / (|A ∩ B| + α|A - B| + β|B - A|)
+    To calculate the Recall, set alpha=1, beta=0.
     To calculate the Tanimoto Coefficient, set alpha=beta=1
     To calculate the Dice Coefficient, set alpha=beta=0.5
 
